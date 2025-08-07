@@ -315,28 +315,31 @@ class WaveMoneyWebhookController(http.Controller):
 
             if order and order.state != 'sale':
                 order.action_confirm()
-
-            if order.advance_payment_status != 'paid':
-                payment_vals  = {
-                    'payment_type': 'inbound',
-                    'partner_type': 'customer',
-                    'partner_id': partner.id,
-                    'amount': amount,
-                    'journal_id': journal.id,
-                    'currency_id': journal.currency_id.id,
-                    'payment_method_line_id': payment_method_line.id,
-                    'payment_method_id': payment_method.id,
-                    'ref': order.name,
-                    'sale_id': order.id,
-                    'is_reconciled': True,
-                }
-                account_payment = request.env['account.payment'].sudo().create(payment_vals)
-                if account_payment:
-                    account_payment.action_post()
-                    return True
-                else:
-                    return False
-
+            try:
+                if order.advance_payment_status != 'paid':
+                    payment_vals  = {
+                        'payment_type': 'inbound',
+                        'partner_type': 'customer',
+                        'partner_id': partner.id,
+                        'amount': amount,
+                        'journal_id': journal.id,
+                        'currency_id': journal.currency_id.id,
+                        'payment_method_line_id': payment_method_line.id,
+                        'payment_method_id': payment_method.id,
+                        'ref': order.name,
+                        'sale_id': order.id,
+                        'is_reconciled': True,
+                    }
+                    account_payment = request.env['account.payment'].sudo().create(payment_vals)
+                    if account_payment:
+                        account_payment.action_post()
+                        return True
+                    else:
+                        return False
+            except Exception as e:
+                _logger.error(f"Error creating payment: {str(e)}")
+                return False
+            
         except Exception as e:
             _logger.error(f"Error handling completed payment: {str(e)}")
             return False
