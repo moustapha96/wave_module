@@ -29,7 +29,7 @@ class PaymentOrder(models.Model):
             description = f"Paiement pour la commande {self.name}"
             currency = self.currency_id.name
             reference = self.name
-            success_url = f"https://dev.ccbmshop.com/wave-paiement?transaction={transaction_id}"
+            success_url = f"https://www.ccbmshop.sn/wave-paiement?transaction={transaction_id}"
 
             # Appeler la fonction pour initier le paiement Wave
             response = self._initiate_wave_payment(transaction_id, order_id, partner_id, phone_number, amount, description, currency, reference, success_url)
