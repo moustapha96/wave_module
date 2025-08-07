@@ -566,8 +566,8 @@ class WaveMoneyController(http.Controller):
                 'currency': transaction.currency,
                 'phone': transaction.phone,
                 'description': transaction.description,
-                'created_at': transaction.created_at,
-                'completed_at': transaction.completed_at,
+                'created_at': transaction.created_at.isoformat() if transaction.created_at else None,
+                'completed_at': transaction.completed_at.isoformat() if transaction.completed_at else None,
                 'order': self._order_to_dict(transaction.order_id)
             })
         return self._make_response(
