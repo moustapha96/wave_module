@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Données de démonstration Wave -->
+        <record id="demo_wave_config" model="wave.config">
+            <field name="name">Configuration Wave Demo</field>
+            <field name="api_key">demo_api_key</field>
+            <field name="webhook_secret">demo_webhook_secret</field>
+            <field name="callback_url">https://demo.example.com/payment/callback</field>
+            <field name="webhook_url">https://demo.example.com/api/wave/webhook</field>
+            <field name="is_active" eval="False" />
+            <field name="environment">sandbox</field>
+            <field name="default_currency">XOF</field>
+        </record>
+
+        <!-- Transaction de démonstration -->
+        <record id="demo_wave_transaction" model="wave.transaction">
+            <field name="wave_id">demo_wave_123456</field>
+            <field name="reference">DEMO_REF_001</field>
+            <field name="amount">5000</field>
+            <field name="currency">XOF</field>
+            <field name="phone">+221701234567</field>
+            <field name="description">Transaction de démonstration</field>
+            <field name="status">completed</field>
+            <field name="payment_link_url">https://pay.wave.com/demo123</field>
+        </record>
+    </data>
+</odoo>
