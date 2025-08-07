@@ -71,12 +71,16 @@ class WaveMoneyWebhookController(http.Controller):
         })
 
         if new_status == 'completed':
-            pourcentage = (100 * transaction.amount) / transaction.order_id.amount_total if transaction.order_id.amount_total else 0
-            invoice = self.create_advance_invoice(transaction.order_id, pourcentage)
-            if invoice:
-                return self.process_payment(transaction.order_id, invoice, transaction.amount, request.env.company)
-            else:
-                return {'success': False, 'error': 'Invoice creation failed'}
+
+            result = self._create_payment_transaction(transaction)
+            _logger.info(f"Payment transaction created: {result}")
+
+            # pourcentage = (100 * transaction.amount) / transaction.order_id.amount_total if transaction.order_id.amount_total else 0
+            # invoice = self.create_advance_invoice(transaction.order_id, pourcentage)
+            # if invoice:
+            #     return self.process_payment(transaction.order_id, invoice, transaction.amount, request.env.company)
+            # else:
+            #     return {'success': False, 'error': 'Invoice creation failed'}
 
         return {'success': True}
 
@@ -309,10 +313,27 @@ class WaveMoneyWebhookController(http.Controller):
             if not order.invoice_ids:
                 order._create_invoices()
 
-            for invoice in order.invoice_ids:
-                if invoice.state == 'draft':
-                    invoice.action_post()
+            invoice = request.env['account.move'].sudo().create({
+                'company_id': company.id,
+                'partner_id': partner.id,
+                'move_type': 'out_invoice',
+                'invoice_date': fields.Date.today(),
+                'invoice_date_due': fields.Date.today(),
+                'currency_id': partner.currency_id.id or order.currency_id.id or journal.currency_id.id,
+                'journal_id': journal.id,
+                'invoice_line_ids': [
+                    (0, 0, {
+                        'product_id': False,
+                        'quantity': 1,
+                        'price_unit': transaction.amount,
+                        'name': transaction.name,
+                        'account_id': request.env.ref('account.account_asset_receivable').id,
+                    })
+                ],
+            })
+            invoice.action_post()
 
+            
             if order.advance_payment_status != 'paid':
                 payment_vals  = {
                     'payment_type': 'inbound',
