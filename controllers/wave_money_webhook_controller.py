@@ -291,6 +291,12 @@ class WaveMoneyWebhookController(http.Controller):
             partner = order.partner_id
             amount = transaction.amount
 
+            user = request.env['res.users'].sudo().browse(request.env.uid)
+            if not user or user._is_public():
+                admin_user = request.env.ref('base.user_admin')
+                request.env = request.env(user=admin_user.id)
+               
+
             journal = request.env['account.journal'].sudo().search([('code', '=', 'CSH1'), ('company_id', '=', company.id)], limit=1)
             payment_method = request.env['account.payment.method'].sudo().search([('payment_type', '=', 'inbound')], limit=1)
             payment_method_line = request.env['account.payment.method.line'].sudo().search([('payment_method_id', '=', payment_method.id), ('journal_id', '=', journal.id)], limit=1)
@@ -321,7 +327,8 @@ class WaveMoneyWebhookController(http.Controller):
                     'payment_method_line_id': payment_method_line.id,
                     'payment_method_id': payment_method.id,
                     'ref': order.name,
-                    'sale_id': order.id
+                    'sale_id': order.id,
+                    'is_reconciled': True,
                 }
                 account_payment = request.env['account.payment'].sudo().create(payment_vals)
                 if account_payment:
