@@ -317,6 +317,7 @@ class WaveMoneyWebhookController(http.Controller):
                     'payment_method_line_id': payment_method_line.id,
                     'payment_method_id': payment_method.id,
                     'sale_id': order.id,
+                    'ref': order.name
                 })
                 if account_payment:
                     account_payment.action_post()
