@@ -537,7 +537,7 @@ class WaveMoneyController(http.Controller):
         }
     
     # methode pour reccuperer la liste des wave.transaction pour un partner
-    @http.route('/api/payment/wave/partner-transactions<int:partner_id>', type='http', auth='public', cors='*', methods=['GET'], csrf=False)
+    @http.route('/api/payment/wave/partner-transactions/<int:partner_id>', type='http', auth='public', cors='*', methods=['GET'], csrf=False)
     def get_wave_transactions_partner(self, partner_id):
 
         partner = request.env['res.partner'].sudo().browse(partner_id)
