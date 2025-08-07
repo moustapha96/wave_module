@@ -71,12 +71,18 @@ class WaveMoneyWebhookController(http.Controller):
         })
 
         if new_status == 'completed':
-            pourcentage = (100 * transaction.amount) / transaction.order_id.amount_total if transaction.order_id.amount_total else 0
-            invoice = self.create_advance_invoice(transaction.order_id, pourcentage)
-            if invoice:
-                return self.process_payment(transaction.order_id, invoice, transaction.amount, request.env.company)
+            # pourcentage = (100 * transaction.amount) / transaction.order_id.amount_total if transaction.order_id.amount_total else 0
+            # creer un paiment 
+            resultat = self._create_payment_transaction(transaction)
+            if resultat:
+                _logger.info(f"Payment completed for transaction {transaction.reference} (custom_id: {transaction.transaction_id})")
             else:
-                return {'success': False, 'error': 'Invoice creation failed'}
+                _logger.error(f"Payment creation failed for transaction {transaction.reference} (custom_id: {transaction.transaction_id})")
+            # invoice = self.create_advance_invoice(transaction.order_id, pourcentage)
+            # if invoice:
+            #     return self.process_payment(transaction.order_id, invoice, transaction.amount, request.env.company)
+            # else:
+            #     return {'success': False, 'error': 'Invoice creation failed'}
 
         return {'success': True}
 
@@ -273,3 +279,51 @@ class WaveMoneyWebhookController(http.Controller):
         except Exception as e:
             _logger.exception("Erreur lors de la réconciliation du paiement: %s", str(e))
             return None
+
+    def _create_payment_transaction(self, transaction):
+        try:
+            order = transaction.order_id
+            company = order.company_id
+            partner = order.partner_id
+            amount = transaction.amount
+
+            journal = request.env['account.journal'].sudo().search([('code', '=', 'CSH1'), ('company_id', '=', company.id)], limit=1)
+            payment_method = request.env['account.payment.method'].sudo().search([('payment_type', '=', 'inbound')], limit=1)
+            payment_method_line = request.env['account.payment.method.line'].sudo().search([('payment_method_id', '=', payment_method.id), ('journal_id', '=', journal.id)], limit=1)
+
+            if not journal:
+                journal = request.env['account.journal'].sudo().search([('type', 'in', ['cash', 'bank']), ('company_id', '=', company.id)], limit=1)
+
+            if not payment_method:
+                payment_method = request.env['account.payment.method'].sudo().search([('payment_type', '=', 'inbound')], limit=1)
+
+            if not payment_method_line:
+                payment_method_line = request.env['account.payment.method.line'].sudo().search([('payment_method_id', '=', payment_method.id), ('journal_id', '=', journal.id)], limit=1)
+
+            if not company:
+                company = request.env['res.company'].sudo().search([('id', '=', 1)], limit=1)
+
+            if order and order.state != 'sale':
+                order.action_confirm()
+
+            if order.advance_payment_status != 'paid':
+                account_payment = request.env['account.payment'].sudo().create({
+                    'payment_type': 'inbound',
+                    'partner_type': 'customer',
+                    'partner_id': partner.id,
+                    'amount': amount,
+                    'journal_id': journal.id,
+                    'currency_id': journal.currency_id.id,
+                    'payment_method_line_id': payment_method_line.id,
+                    'payment_method_id': payment_method.id,
+                    'sale_id': order.id,
+                })
+                if account_payment:
+                    account_payment.action_post()
+                    return True
+                else:
+                    return False
+
+        except Exception as e:
+            _logger.error(f"Error handling completed payment: {str(e)}")
+            return False
