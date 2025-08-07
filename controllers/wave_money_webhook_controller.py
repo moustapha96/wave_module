@@ -306,8 +306,15 @@ class WaveMoneyWebhookController(http.Controller):
             if order and order.state != 'sale':
                 order.action_confirm()
 
+            if not order.invoice_ids:
+                order._create_invoices()
+
+            for invoice in order.invoice_ids:
+                if invoice.state == 'draft':
+                    invoice.action_post()
+
             if order.advance_payment_status != 'paid':
-                account_payment = request.env['account.payment'].sudo().create({
+                payment_vals  = {
                     'payment_type': 'inbound',
                     'partner_type': 'customer',
                     'partner_id': partner.id,
@@ -316,15 +323,14 @@ class WaveMoneyWebhookController(http.Controller):
                     'currency_id': journal.currency_id.id,
                     'payment_method_line_id': payment_method_line.id,
                     'payment_method_id': payment_method.id,
-                    'sale_id': order.id,
-                    'ref': order.name
-                })
-                if account_payment:
-                    account_payment.action_post()
-                    return True
-                else:
-                    return False
-
+                    'ref': invoice.name,
+                }
+                account_payment = request.env['account.payment'].sudo().create(payment_vals)
+                account_payment.action_post()
+                invoice.js_assign_outstanding_line(account_payment.move_id.line_ids.filtered(lambda l: l.account_id.internal_type == 'receivable').id)
+                
+                return True
+                
         except Exception as e:
             _logger.error(f"Error handling completed payment: {str(e)}")
             return False
