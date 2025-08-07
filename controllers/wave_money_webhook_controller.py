@@ -71,18 +71,12 @@ class WaveMoneyWebhookController(http.Controller):
         })
 
         if new_status == 'completed':
-            # pourcentage = (100 * transaction.amount) / transaction.order_id.amount_total if transaction.order_id.amount_total else 0
-            # creer un paiment 
-            resultat = self._create_payment_transaction(transaction)
-            if resultat:
-                _logger.info(f"Payment completed for transaction {transaction.reference} (custom_id: {transaction.transaction_id})")
+            pourcentage = (100 * transaction.amount) / transaction.order_id.amount_total if transaction.order_id.amount_total else 0
+            invoice = self.create_advance_invoice(transaction.order_id, pourcentage)
+            if invoice:
+                return self.process_payment(transaction.order_id, invoice, transaction.amount, request.env.company)
             else:
-                _logger.error(f"Payment creation failed for transaction {transaction.reference} (custom_id: {transaction.transaction_id})")
-            # invoice = self.create_advance_invoice(transaction.order_id, pourcentage)
-            # if invoice:
-            #     return self.process_payment(transaction.order_id, invoice, transaction.amount, request.env.company)
-            # else:
-            #     return {'success': False, 'error': 'Invoice creation failed'}
+                return {'success': False, 'error': 'Invoice creation failed'}
 
         return {'success': True}
 
@@ -104,12 +98,15 @@ class WaveMoneyWebhookController(http.Controller):
         Returns:
             account.move: Facture d'acompte créée
         """
-        user = request.env['res.users'].sudo().browse(request.env.uid)
-        if not user or user._is_public():
-            admin_user = request.env.ref('base.user_admin')
-            request.env = request.env(user=admin_user.id)
-            _logger.info("Création de la facture d'acompte pour la commande %s avec pourcentage %.2f%% avec l'utilisateur administrateur par défaut", order.name, percentage)
-
+        # user = request.env['res.users'].sudo().browse(request.env.uid)
+        # if not user or user._is_public():
+        #     admin_user = request.env.ref('base.user_admin')
+        #     request.env = request.env(user=admin_user.id)
+        #     _logger.info("Création de la facture d'acompte pour la commande %s avec pourcentage %.2f%% avec l'utilisateur administrateur par défaut", order.name, percentage)
+        
+        admin_user = request.env.ref('base.user_admin')
+        env = request.env(user=admin_user.id)
+        
         try:
             if order.state not in ['sale', 'done']:
                 order.action_confirm()
@@ -121,7 +118,7 @@ class WaveMoneyWebhookController(http.Controller):
                 'default_advance_payment_method': 'percentage',
             }
 
-            advance_payment_wizard = request.env['sale.advance.payment.inv'].sudo().with_context(context).create({
+            advance_payment_wizard = env['sale.advance.payment.inv'].sudo().with_context(context).create({
                 'advance_payment_method': 'percentage',
                 'amount': percentage,
             })
@@ -144,8 +141,7 @@ class WaveMoneyWebhookController(http.Controller):
                 ).sorted('create_date', reverse=True)[:1]
 
             if invoice:
-                if invoice.state == 'draft':
-                    invoice.action_post()
+                invoice.action_post()
                 _logger.info("Facture d'acompte créée: %s pour commande %s (%.2f%%)",
                             invoice.name, order.name, percentage)
                 return invoice
@@ -280,6 +276,10 @@ class WaveMoneyWebhookController(http.Controller):
             _logger.exception("Erreur lors de la réconciliation du paiement: %s", str(e))
             return None
 
+
+
+
+
     def _create_payment_transaction(self, transaction):
         try:
             order = transaction.order_id
@@ -326,11 +326,12 @@ class WaveMoneyWebhookController(http.Controller):
                     'ref': invoice.name,
                 }
                 account_payment = request.env['account.payment'].sudo().create(payment_vals)
-                account_payment.action_post()
-                invoice.js_assign_outstanding_line(account_payment.move_id.line_ids.filtered(lambda l: l.account_id.internal_type == 'receivable').id)
-                
-                return True
-                
+                if account_payment:
+                    account_payment.action_post()
+                    return True
+                else:
+                    return False
+
         except Exception as e:
             _logger.error(f"Error handling completed payment: {str(e)}")
             return False
