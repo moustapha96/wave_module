@@ -1,0 +1,11 @@
+2025-08-07 20:05:44,584 6051 ERROR ccbmshop_prod_duplicate odoo.addons.wave_module.models.wave_transaction: Aucune méthode de paiement trouvée.
+2025-08-07 20:05:44,584 6051 INFO ccbmshop_prod_duplicate odoo.addons.wave_module.models.wave_transaction: Paiement et facture créés avec succès pour la transaction 188-980-200-S00982-creditorder-1-591
+2025-08-07 20:05:44,614 6051 ERROR ccbmshop_prod_duplicate odoo.addons.wave_module.controllers.wave_money_webhook_controller: Error handling completed payment: Veuillez procéder au paiement du premier acompte pour valider la commande à crédit.
+2025-08-07 20:05:44,614 6051 INFO ccbmshop_prod_duplicate odoo.addons.wave_module.controllers.wave_money_webhook_controller: Payment transaction created: False
+2025-08-07 20:05:44,633 6051 INFO ccbmshop_prod_duplicate werkzeug: 34.76.157.22 - - [07/Aug/2025 20:05:44] "POST /wave/webhook HTTP/1.0" 200 - 88 0.027 1.803
+2025-08-07 20:05:54,895 6051 INFO ccbmshop_prod_duplicate werkzeug: 41.83.96.224 - - [07/Aug/2025 20:05:54] "GET /api/produits-filtrer-promo?category=All&search=&min=100&max=5000000&page=1&limit=10&productType=All&tag=All HTTP/1.0" 200 - 3 0.030 0.007
+2025-08-07 20:05:55,019 6051 INFO ccbmshop_prod_duplicate werkzeug: 41.83.96.224 - - [07/Aug/2025 20:05:55] "GET /api/produits-filtrer-promo? HTTP/1.0" 200 - 3 0.031 0.006
+2025-08-07 20:05:55,079 6051 INFO ccbmshop_prod_duplicate werkzeug: 41.83.96.224 - - [07/Aug/2025 20:05:55] "GET /api/produits-filtrer-ramadan?category=All&search=&min=100&max=5000000&page=1&limit=10&productType=All&tag=All HTTP/1.0" 200 - 3 0.012 0.006
+2025-08-07 20:05:55,094 6051 INFO ccbmshop_prod_duplicate werkzeug: 41.83.96.224 - - [07/Aug/2025 20:05:55] "GET /api/produits-filtrer-ramadan?tag=Ramadan HTTP/1.0" 200 - 3 0.014 0.006
+2025-08-07 20:05:55,119 6051 INFO ccbmshop_prod_duplicate werkzeug: 41.83.96.224 - - [07/Aug/2025 20:05:55] "GET /api/produits-filtrer-tabaski?category=All&search=&min=100&max=5000000&page=1&limit=10&productType=All&tag=All HTTP/1.0" 200 - 3 0.013 0.007
+2025-08-07 20:05:55,138 6051 INFO ccbmshop_prod_duplicate werkzeug: 41.83.96.224 - - [07/Aug/2025 20:05:55] "GET /api/produits-filtrer-tabaski? HTTP/1.0" 200 - 3 0.013 0.007
