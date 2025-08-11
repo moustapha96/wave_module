@@ -25,7 +25,7 @@ class PaymentOrder(models.Model):
             order_id = self.id
             partner_id = self.partner_id.id
             phone_number = self.partner_id.phone or ''
-            amount = self.amount_total
+            amount = self.amount_residual
             description = f"Paiement pour la commande {self.name}"
             currency = self.currency_id.name
             reference = self.name
